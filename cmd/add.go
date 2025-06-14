@@ -354,7 +354,7 @@ func (m model) View() string {
 		labelStyle.Render("[ctrl+n] Add another account/amount pair"),
 		labelStyle.Render("[q]      Quit"),
 	}, "\n")
-	b.WriteString("\n" + footer + "\n")
+	b.WriteString(footer)
 
 	return boxStyle.Render(b.String())
 }
