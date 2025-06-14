@@ -15,10 +15,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	appendToFile bool
-)
-
 var AddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Interactively add a new journal entry",
@@ -39,22 +35,22 @@ var AddCmd = &cobra.Command{
 
 		if m, ok := finalModel.(model); ok && m.submit {
 			finalEntry = m.JournalString()
-		}
 
-		if appendToFile && finalEntry != "" {
-			f, err := os.OpenFile(journalFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				fmt.Println("Failed to open journal file:", err)
-				os.Exit(1)
+			if m.appendToFile && finalEntry != "" {
+				f, err := os.OpenFile(journalFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if err != nil {
+					fmt.Println("Failed to open journal file:", err)
+					os.Exit(1)
+				}
+				defer f.Close()
+
+				if _, err := f.WriteString("\n" + finalEntry); err != nil {
+					fmt.Println("Failed to write to journal file:", err)
+					os.Exit(1)
+				}
+
+				fmt.Println(successStyle.Render("Entry successfully appended to journal file."))
 			}
-			defer f.Close()
-
-			if _, err := f.WriteString("\n" + finalEntry); err != nil {
-				fmt.Println("Failed to write to journal file:", err)
-				os.Exit(1)
-			}
-
-			fmt.Println(successStyle.Render("Entry successfully appended to journal file."))
 		}
 	},
 }
@@ -75,10 +71,6 @@ func getAccounts(journalFilePath string) []string {
 	content := string(data)
 
 	return strings.Split(strings.TrimSpace(content), "\n")
-}
-
-func init() {
-	AddCmd.Flags().BoolVarP(&appendToFile, "append", "a", false, "Append the journal entry to the file")
 }
 
 var (
@@ -106,7 +98,6 @@ type entryField struct {
 
 func styledList(items []list.Item) list.Model {
 	l := list.New(items, list.NewDefaultDelegate(), 30, 5)
-
 	l.SetShowTitle(false)
 	l.Styles.PaginationStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	l.Styles.HelpStyle = lipgloss.NewStyle().Faint(true)
@@ -139,12 +130,13 @@ func newEntryField(id int) entryField {
 }
 
 type model struct {
-	date     textinput.Model
-	desc     textinput.Model
-	entries  []entryField
-	focusIdx int
-	errMsg   string
-	submit   bool
+	date         textinput.Model
+	desc         textinput.Model
+	entries      []entryField
+	focusIdx     int
+	errMsg       string
+	submit       bool
+	appendToFile bool
 }
 
 func initialModel() model {
@@ -232,20 +224,33 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.focusIdx = (m.focusIdx - 1 + (2 + len(m.entries)*2)) % (2 + len(m.entries)*2)
 			m.focusCurrent()
 
-		case "ctrl+a":
-			newField := newEntryField(len(m.entries))
-			m.entries = append(m.entries, newField)
-			m.focusIdx = 2 + (len(m.entries)-1)*2
+		case "ctrl+n":
+			newEntry := newEntryField(len(m.entries))
+			m.entries = append(m.entries, newEntry)
+			m.focusIdx = 2 + (len(m.entries)-1)*2 // Focus the new account input
 			m.focusCurrent()
+			return m, nil
 
-		case "ctrl+s":
+		case "ctrl+a":
 			if err := m.validate(); err != "" {
 				m.errMsg = err
 				return m, nil
 			}
+			m.appendToFile = true
 			m.submit = true
 			m.errMsg = ""
 			return m, tea.Quit
+
+		case "ctrl+o":
+			if err := m.validate(); err != "" {
+				m.errMsg = err
+				return m, nil
+			}
+			m.appendToFile = false
+			m.submit = true
+			m.errMsg = ""
+			return m, tea.Quit
+
 		case "enter":
 			for i := range m.entries {
 				if m.entries[i].focused {
@@ -343,13 +348,12 @@ func (m model) View() string {
 		b.WriteString(errorStyle.Render("Error: " + m.errMsg + "\n\n"))
 	}
 
-	footer := lipgloss.JoinHorizontal(lipgloss.Top,
-		labelStyle.Render("[ctrl+a] Add"),
-		lipgloss.NewStyle().Width(2).Render(""),
-		labelStyle.Render("[ctrl+s] Submit"),
-		lipgloss.NewStyle().Width(2).Render(""),
-		labelStyle.Render("[q] Quit"),
-	)
+	footer := strings.Join([]string{
+		labelStyle.Render("[ctrl+a] Generate and append to journal"),
+		labelStyle.Render("[ctrl+o] Generate and output to console"),
+		labelStyle.Render("[ctrl+n] Add another account/amount pair"),
+		labelStyle.Render("[q]      Quit"),
+	}, "\n")
 	b.WriteString("\n" + footer + "\n")
 
 	return boxStyle.Render(b.String())
