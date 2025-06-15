@@ -2,3 +2,6 @@ example.journal
 .env
 notes.md
 who-am-i.txt
+context-ask.txt 
+context-import.txt
+transactions.csv

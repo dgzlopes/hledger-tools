@@ -3,11 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/openai/openai-go"
-	"github.com/siddhantac/hledger"
 	"github.com/spf13/cobra"
 )
 
@@ -85,22 +83,6 @@ Question:
 		fmt.Println()
 		fmt.Println(resp.Choices[0].Message.Content)
 	},
-}
-
-func getBalanceSheet(journalFilePath string) string {
-	h := hledger.New("hledger", journalFilePath)
-	reader, err := h.BalanceSheet(hledger.NewOptions().WithPercent(true).WithTree(true))
-	if err != nil {
-		fmt.Println("Failed to load balance sheet:", err)
-		os.Exit(1)
-	}
-
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(data)
 }
 
 func init() {

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddhantac/hledger"
 	"github.com/spf13/cobra"
 )
 
@@ -49,24 +47,6 @@ var AddCmd = &cobra.Command{
 			}
 		}
 	},
-}
-
-func getAccounts(journalFilePath string) []string {
-	h := hledger.New("hledger", journalFilePath)
-	reader, err := h.Accounts(hledger.NewOptions())
-	if err != nil {
-		fmt.Println("Failed to load accounts:", err)
-		os.Exit(1)
-	}
-
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		panic(err)
-	}
-
-	content := string(data)
-
-	return strings.Split(strings.TrimSpace(content), "\n")
 }
 
 var (

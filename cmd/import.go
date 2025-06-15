@@ -1,13 +1,17 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/openai/openai-go"
 	"github.com/spf13/cobra"
 )
 
 var contextPath string
+var showPrompt bool
 
 var ImportCmd = &cobra.Command{
 	Use:     "import <source>",
@@ -25,25 +29,75 @@ var ImportCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		sourcePath := args[0]
 
-		if _, err := os.Stat(sourcePath); os.IsNotExist(err) {
-			fmt.Printf("Error: source file not found: %s\n", sourcePath)
+		sourceData, err := os.ReadFile(sourcePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: could not read source file: %s\n", sourcePath)
 			os.Exit(1)
 		}
 
-		fmt.Printf("Importing from source: %s\n", sourcePath)
-
+		var contextContent string
 		if contextPath != "" {
-			if _, err := os.Stat(contextPath); os.IsNotExist(err) {
-				fmt.Printf("Warning: context file not found: %s (ignored)\n", contextPath)
+			data, err := os.ReadFile(contextPath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: failed to read context file: %s (ignored)\n", contextPath)
 			} else {
+				contextContent = string(data)
 				fmt.Printf("Using context file: %s\n", contextPath)
 			}
 		}
 
-		fmt.Println("TODO")
+		accounts := getAccounts(journalFilePath)
+
+		systemMsg := "You are a financial assistant that converts raw transactions into hledger journal entries."
+		userPrompt := fmt.Sprintf(`Here are the account names available:
+
+%s
+
+Here is the source data (e.g., CSV or JSON):
+
+%s
+
+Context:
+%s
+
+Generate valid hledger journal transactions using only the accounts above.
+
+IMPORTANT:
+- Do NOT explain anything.
+- Do NOT include any prose or formatting.
+- Output ONLY valid hledger journal entries.
+`, strings.Join(accounts, "\n"), string(sourceData), contextContent)
+
+		if showPrompt {
+			fmt.Println("----- Prompt sent to OpenAI -----")
+			fmt.Println(userPrompt)
+			fmt.Println("----- End of prompt -----")
+		}
+
+		if os.Getenv("OPENAI_API_KEY") == "" {
+			fmt.Fprintln(os.Stderr, "Error: OPENAI_API_KEY environment variable is not set.")
+			os.Exit(1)
+		}
+
+		client := openai.NewClient()
+		resp, err := client.Chat.Completions.New(context.Background(), openai.ChatCompletionNewParams{
+			Model: openai.ChatModelGPT4o,
+			Messages: []openai.ChatCompletionMessageParamUnion{
+				openai.SystemMessage(systemMsg),
+				openai.UserMessage(userPrompt),
+			},
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "OpenAI request failed: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println()
+		fmt.Println(resp.Choices[0].Message.Content)
 	},
 }
 
 func init() {
 	ImportCmd.Flags().StringVarP(&contextPath, "context", "c", "", "Path to optional context file. It will be included in the LLM prompt.")
+	ImportCmd.Flags().BoolVar(&showPrompt, "show-prompt", false, "Print the full prompt sent to the LLM")
 }
