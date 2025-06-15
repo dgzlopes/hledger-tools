@@ -16,7 +16,7 @@ They are implemented to be as "safe" as possible:
   - You *can* send your **entire journal** with `--include-journal`, but you probably shouldn’t.
 
 Use `--show-prompt` to preview the full LLM prompt.  
-Use --context to add extra info (e.g. goals or categorization rules).
+Use `--context` to add extra info (e.g. goals or categorization rules).
 
 ## Usage
 
