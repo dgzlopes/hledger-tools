@@ -16,14 +16,10 @@ import (
 )
 
 var AddCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Interactively add a new journal entry",
+	Use:     "add",
+	Short:   "Add a new transaction interactively",
+	GroupID: "core",
 	Run: func(cmd *cobra.Command, args []string) {
-		if journalFilePath == "" {
-			fmt.Println("No journal file specified. Use -f <file.journal>")
-			os.Exit(1)
-		}
-
 		var finalEntry string
 
 		p := tea.NewProgram(initialModel(), tea.WithOutput(os.Stdout))
