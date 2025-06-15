@@ -18,15 +18,45 @@ They are implemented to be as "safe" as possible:
 Use `--show-prompt` to preview the full LLM prompt.  
 Use `--context` to add extra info (e.g. goals or categorization rules).
 
-## Usage
+## Usage examples
 
 ```bash
 # Interactively add a transaction to your journal
 hledger-tools add --journal 2025.journal
+╭────────────────────────────────────────────────────────────╮
+│                                                            │
+│  Date:        > 2025-06-16                                 │
+│  Description: > My salary                                  │
+│                                                            │
+│  Account 1:   assets:cash                                  │
+│  Amount  1:   > 100€                                       │
+│                                                            │
+│  Account 2:   assets:savings:bankB                         │
+│  Amount  2:   > A                                          │
+│                                                            │
+│  [ctrl+a] Generate and append to journal                   │
+│  [ctrl+o] Generate and output to console                   │
+│  [ctrl+n] Add another account/amount pair                  │
+│  [q]      Quit                                             │
+│                                                            │
+╰────────────────────────────────────────────────────────────╯
+```
 
+```bash
 # Import transactions from a CSV file
 hledger-tools import transactions.csv --journal 2025.journal
+2025-06-23 * "Dinner at Restaurant"
+    expenses:fun  €60.00
+    assets:cash
 
+2025-06-28 * "End of Month Savings"
+    assets:savings:bankA  €250.00
+    assets:cash
+```
+
+```bash
 # Ask a question about your balance sheet, with optional context
 hledger-tools ask "Am I saving enough?" --journal 2025.journal --context who-am-i.txt
+Roughly 18% of your assets are in savings accounts and 22% in investment funds.  
+....... more things ....... 
 ```
