@@ -6,7 +6,7 @@ This repo contains a collection of small tools for working with hledger journals
 - `import` – Import transactions from CSV or similar files *(AI-powered)*
 - `review` – Analyze your journal and get financial feedback *(AI-powered)*
 
-AI-powered tools use OpenAI’s APIs and require the `OPENAI_API_KEY` environment variable to be set. You can feed additional context to the LLM via the `--context` flag (e.g. financial goals, preferences, or categorization rules).
+AI-powered tools use OpenAI’s APIs and require the `OPENAI_API_KEY` environment variable to be set. You can feed additional context to the LLM via the `--context` flag (e.g. financial goals or categorization rules).
 
 ---
 
