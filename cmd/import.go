@@ -12,6 +12,7 @@ import (
 
 var contextPath string
 var showPrompt bool
+var includeJournal bool
 
 var ImportCmd = &cobra.Command{
 	Use:     "import <source>",
@@ -46,6 +47,16 @@ var ImportCmd = &cobra.Command{
 			}
 		}
 
+		var journalContent string
+		if includeJournal {
+			journalBytes, err := os.ReadFile(journalFilePath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: failed to read journal file: %s (ignored)\n", journalFilePath)
+			} else {
+				journalContent = fmt.Sprintf("\nHere is my full journal for context:\n\n%s", string(journalBytes))
+			}
+		}
+
 		accounts := getAccounts(journalFilePath)
 
 		systemMsg := "You are a financial assistant that converts raw transactions into hledger journal entries."
@@ -58,7 +69,7 @@ Here is the source data (e.g., CSV or JSON):
 %s
 
 Context:
-%s
+%s%s
 
 Generate valid hledger journal transactions using only the accounts above.
 
@@ -66,7 +77,7 @@ IMPORTANT:
 - Do NOT explain anything.
 - Do NOT include any prose or formatting.
 - Output ONLY valid hledger journal entries.
-`, strings.Join(accounts, "\n"), string(sourceData), contextContent)
+`, strings.Join(accounts, "\n"), string(sourceData), contextContent, journalContent)
 
 		if showPrompt {
 			fmt.Println("----- Prompt sent to OpenAI -----")
@@ -100,4 +111,5 @@ IMPORTANT:
 func init() {
 	ImportCmd.Flags().StringVarP(&contextPath, "context", "c", "", "Path to optional context file. It will be included in the LLM prompt.")
 	ImportCmd.Flags().BoolVar(&showPrompt, "show-prompt", false, "Print the full prompt sent to the LLM")
+	ImportCmd.Flags().BoolVar(&includeJournal, "include-journal", false, "Include the full journal in the LLM prompt (NOT RECOMMENDED)")
 }
