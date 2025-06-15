@@ -2,7 +2,7 @@
 
 This repo contains a collection of small tools for working with hledger journals.
 
-- `add` – A better `hledger add` (with account selector and more)
+- `add` – A better way to interactively add transactions to your journal
 - `import` – Import transactions from CSV or similar files *(AI-powered)*
 - `review` – Analyze your journal and get financial feedback *(AI-powered)*
 
