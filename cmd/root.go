@@ -31,7 +31,7 @@ func init() {
 
 	rootCmd.AddCommand(AddCmd)
 	rootCmd.AddCommand(ImportCmd)
-	rootCmd.AddCommand(ReviewCmd)
+	rootCmd.AddCommand(AskCmd)
 
 	rootCmd.AddGroup(&cobra.Group{
 		ID:    "core",
